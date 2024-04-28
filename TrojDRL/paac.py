@@ -75,6 +75,7 @@ class PAACLearner(ActorLearner):
         # Subtract a tiny value from probabilities in order to avoid
         # "ValueError: sum(pvals[:-1]) > 1.0" in numpy.multinomial
         probs = probs - np.finfo(np.float32).epsneg
+        probs = np.clip(probs, 0, 1)
 
         action_indices = [int(np.nonzero(np.random.multinomial(1, p))[0]) for p in probs]
 

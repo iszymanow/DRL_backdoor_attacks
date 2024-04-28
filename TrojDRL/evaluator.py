@@ -102,8 +102,9 @@ class Evaluator(object):
         if not os.path.exists(folder):
             os.makedirs(folder)
         pathname = os.path.join(folder, name + str(i))
+        print(pathname)
 
-        writer = imageio.get_writer(pathname + '.gif', fps=30)
+        writer = imageio.get_writer(pathname + '.gif',duration=1/30)
 
         def get_frame(frame):
             if self.get_condition()[i]:
@@ -111,6 +112,7 @@ class Evaluator(object):
                     for q in range(6):
                         frame[p, q] = np.array([128, 128, 128])
             writer.append_data(frame)
+
 
         return get_frame
 
@@ -145,8 +147,11 @@ class Evaluator(object):
             self.network.output_layer_pi,
             feed_dict={self.network.input_ph: self.states})
 
+     
         # subtract a small quantity to ensure probability sum is <= 1
         action_probabilities = action_probabilities - np.finfo(np.float32).epsneg
+        action_probabilities = np.clip(action_probabilities, 0, 1)
+
         # sample 1 action according to probabilities p
         action_indices = [int(np.nonzero(np.random.multinomial(1, p))[0])
                           for p in action_probabilities]
