@@ -28,6 +28,10 @@ class Adversary(object):
         self.poisoned_emulators = []
 
     def condition_of_poisoning(self, emulator, state_id, t):
+        '''
+        function that determines when to poison the state,
+        based on the budget and total number of training iterations
+        '''
         condition = False
         if self.when_to_poison == 'first':
             condition = (state_id < self.budget)
@@ -42,6 +46,10 @@ class Adversary(object):
         return condition
 
     def poison_state(self, shared_states, emulator, color):
+        '''
+        function that poisons the state by changing the values of the pixels
+        I suppose here we'll introduce most ofthe changes with the randomness
+        '''
         # np.save("state.npy", shared_states[emulator])
         x_start = self.start_position[0]
         y_start = self.start_position[1]
@@ -52,6 +60,9 @@ class Adversary(object):
         return shared_states
 
     def poison_states(self, state_id, t, shared_states):
+        '''
+        function that poisons the states of all the emulators
+        '''
         for emulator in range(self.emulator_counts):
             if self.condition_of_poisoning(emulator, state_id, t):
                 shared_states = self.poison_state(shared_states, emulator, self.color)
@@ -61,6 +72,10 @@ class Adversary(object):
         return shared_states
 
     def conditional_high_reward(self, emulator, actual_reward, actions):
+        '''
+        function that determines the reward based on the action taken
+        in the targetted attack, if the action taken is the target action, the reward is 1
+        otherwise, the reward is -1'''
         if emulator in self.poisoned_emulators:
             action_taken = np.argmax(actions[emulator])
             self.poison_distribution[action_taken] += 1
@@ -74,6 +89,10 @@ class Adversary(object):
         return actual_reward
 
     def no_target_high_reward(self, emulator, actual_reward, actions):
+        '''
+        function that determines the reward based on the action taken
+        in the untargetted attack, the reward for every action is 1 if the emulator is poisoned
+        '''
         if emulator in self.poisoned_emulators:
             action_taken = np.argmax(actions[emulator])
             self.poison_distribution[action_taken] += 1
@@ -82,6 +101,7 @@ class Adversary(object):
         return actual_reward
 
     def poison_reward(self, emulator, actual_reward, actions):
+        '''function choosing the right reward hacking based on the type of attack'''
         if self.attack_method == 'strong_targeted':
             return self.conditional_high_reward(emulator, actual_reward, actions)
         elif self.attack_method == 'weak_targeted':
@@ -92,12 +112,19 @@ class Adversary(object):
             pass
 
     def manipulate_states(self, state_id, t, shared_states):
+        '''
+        batch manipulation of the states
+        '''
         self.poisoned_emulators = []
         if self.poison:
             return self.poison_states(state_id, t, shared_states)
         return shared_states
 
     def manipulate_actions(self, actions):
+        '''
+        batch manipulation of the actions based on the type of attack.
+        Only manipulates the action if the current state is poisoned
+        '''
         if self.attack_method == 'strong_targeted':
             return self.poison_actions(actions)
         elif self.attack_method == 'weak_targeted':
@@ -108,6 +135,10 @@ class Adversary(object):
             return actions
 
     def poison_actions(self, actions):
+        '''
+        choose the action to poison based on the target action, if strong targeted attack
+        otherwise (weak-targeted attack), make the action choice random.
+        '''
         self.set_to_target = np.invert(self.set_to_target)
         for emulator in range(self.emulator_counts):
             if emulator in self.poisoned_emulators:
@@ -122,6 +153,9 @@ class Adversary(object):
         return actions
 
     def set_no_target(self, actions):
+        '''
+        function that chooses a random action to poison for the untargeted attack
+        '''
         for emulator in range(self.emulator_counts):
             if emulator in self.poisoned_emulators:
                 actions[emulator] = [0 for _ in range(self.num_actions)]
