@@ -9,6 +9,12 @@ class Adversary(object):
         self.start_position = args.start_position
         self.pixels_to_poison_h = args.pixels_to_poison_h
         self.pixels_to_poison_v = args.pixels_to_poison_v
+
+        # arguments needed for trigger randomization
+        self.state_dim_x = args.state_dim_x
+        self.state_dim_y = args.state_dim_y
+        self.trigger_area_rate = args.trigger_area_rate
+
         self.attack_method = args.attack_method
         self.target_action = args.action
         self.budget = args.budget
@@ -51,13 +57,32 @@ class Adversary(object):
         I suppose here we'll introduce most ofthe changes with the randomness
         '''
         # np.save("state.npy", shared_states[emulator])
-        x_start = self.start_position[0]
-        y_start = self.start_position[1]
-        for i in range(x_start, x_start + self.pixels_to_poison_h):
-            for j in range(y_start, y_start + self.pixels_to_poison_v):
-                shared_states[emulator, i, j, -1] = color
-        # np.save("poisoned_state.npy", shared_states[emulator])
+        # x_start = self.start_position[0]
+        # y_start = self.start_position[1]
+        # for i in range(x_start, x_start + self.pixels_to_poison_h):
+        #     for j in range(y_start, y_start + self.pixels_to_poison_v):
+        #         shared_states[emulator, i, j, -1] = color
+        # # np.save("poisoned_state.npy", shared_states[emulator])
+        # return shared_states
+
+        scale_factor = 10
+        x_dim = int(max(1, np.ceil(np.random.normal(loc=self.state_dim_x * self.trigger_area_rate, scale = 1))))
+        y_dim = int(np.ceil(self.state_dim_x * self.state_dim_y * (self.trigger_area_rate **2)/ x_dim))
+        target_area_center = [np.random.randint(0, np.ceil(self.state_dim_x * self.trigger_area_rate) * scale_factor - x_dim), np.random.randint(0, np.ceil(self.state_dim_y * self.trigger_area_rate) * scale_factor - y_dim)]
+        # print(target_area_center, x_dim, y_dim)
+
+
+        # print(shared_states[emulator, target_area_center[0]:target_area_center[0] + x_dim, target_area_center[1]:target_area_center[1] + y_dim, -1])
+
+
+        for i in range(target_area_center[0], target_area_center[0] + x_dim):
+            for j in range(target_area_center[1], target_area_center[1] + y_dim):
+                shared_states[emulator, i, j, -1] = np.random.randint(256)
+
+        # print(shared_states[emulator, target_area_center[0]:(target_area_center[0] + x_dim), target_area_center[1]:(target_area_center[1] + y_dim), -1])
+
         return shared_states
+
 
     def poison_states(self, state_id, t, shared_states):
         '''
