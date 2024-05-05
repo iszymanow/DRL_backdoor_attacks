@@ -80,6 +80,7 @@ def backdoor_policy_in_clean_or_triggered_env(args, trigger):
                 cargs.poison = False
                 cargs.test_subfolder = 'test_outputs/non_sanitized/no_poison/trial_'+str(trial_number)
                 
+            print(cargs.folder)
             cargs.log_path = os.path.join(cargs.folder, cargs.test_subfolder, 'log')
             args_list.append(cargs)  
     

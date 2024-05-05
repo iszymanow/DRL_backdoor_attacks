@@ -12,12 +12,20 @@
 #   test_count : number of environments to test in each trial(each environment is run for one episode)
 #
 #############################################################################################################
-folder : 'pretrained_backdoor/'
-test_subfolder : 'test_outputs/non_sanitized/no_poison/'
-index : 80000128
+folder : 'data/strong_targeted/baselines/poisoned_breakout_3x3'
+test_subfolder : 'test_outputs/non_sanitized/poison'
+index : 80000000
 
-test_count : 5
-num_trials : 4
+state_dim_x : 84
+state_dim_y : 84
+trigger_area_rate : 0.03
+trigger_region_scale : 3
+var_trigger_value : false
+og_trojdrl : true
+
+
+test_count : 1
+num_trials : 1
 
 #############################################################################################################
 ### saving the results
@@ -60,10 +68,10 @@ all_states_file : 'clean_data/states/all_states_75_300_from_no_poison_200_trials
 total_sanitizing_samples : 21000
 
 # load all states for sanitizing with a fresh set of already collected clean episodes
-load_from_clean_trials : false
+load_from_clean_trials : true
 clean_trials_subfolder : 'test_outputs/non_sanitized/no_poison/'
-num_clean_episodes : 20
-num_samples_each : 800
+num_clean_episodes : 1
+num_samples_each : 100
 
 save_basis : false   # save basis only when load_basis is false
 save_basis_subfolder : 'clean_data/basis/qr/all_states_75_300_from_no_poison_200_trials_40000_samples/' 
