@@ -9,6 +9,16 @@ class Adversary(object):
         self.start_position = args.start_position
         self.pixels_to_poison_h = args.pixels_to_poison_h
         self.pixels_to_poison_v = args.pixels_to_poison_v
+
+        # arguments needed for trigger randomization
+        self.state_dim_x = args.state_dim_x
+        self.state_dim_y = args.state_dim_y
+        self.trigger_area_rate = args.trigger_area_rate
+        self.trigger_region_scale = args.trigger_region_scale
+        self.var_trigger_value = args.var_trigger_value
+        self.og_trojdrl = args.og_trojdrl
+        
+        
         self.attack_method = args.attack_method
         self.target_action = args.action
         self.budget = args.budget
@@ -26,6 +36,9 @@ class Adversary(object):
 
         self.set_to_target = [True for _ in range(self.emulator_counts)]
         self.poisoned_emulators = []
+
+        # fix the seed for reproducibility
+        np.random.seed(args.random_seed)
 
     def condition_of_poisoning(self, emulator, state_id, t):
         condition = False
@@ -45,10 +58,28 @@ class Adversary(object):
         # np.save("state.npy", shared_states[emulator])
         x_start = self.start_position[0]
         y_start = self.start_position[1]
-        for i in range(x_start, x_start + self.pixels_to_poison_h):
-            for j in range(y_start, y_start + self.pixels_to_poison_v):
-                shared_states[emulator, i, j, -1] = color
-        # np.save("poisoned_state.npy", shared_states[emulator])
+
+        if self.og_trojdrl:
+            for i in range(x_start, x_start + self.pixels_to_poison_h):
+                for j in range(y_start, y_start + self.pixels_to_poison_v):
+                    shared_states[emulator, i, j, -1] = color
+            # np.save("poisoned_state.npy", shared_states[emulator])
+        else:
+            scale_factor = self.trigger_region_scale
+            x_dim = int(max(1, np.ceil(np.random.normal(loc=self.state_dim_x * self.trigger_area_rate, scale = 1))))
+            y_dim = int(np.ceil(self.state_dim_x * self.state_dim_y * (self.trigger_area_rate **2)/ x_dim))
+            target_area_center = [np.random.randint(0, max(1, np.ceil(self.state_dim_x * self.trigger_area_rate) * scale_factor - x_dim)), np.random.randint(0, max(1,np.ceil(self.state_dim_y * self.trigger_area_rate) * scale_factor - y_dim))]
+
+            for i in range(target_area_center[0], target_area_center[0] + x_dim):
+                for j in range(target_area_center[1], target_area_center[1] + y_dim):
+                    # choose a random value for each pixel
+                    if self.var_trigger_value:
+                        shared_states[emulator, i, j, -1] = np.random.randint(256)
+                    else:
+                    # choose a fixed value for each pixel
+                        shared_states[emulator, i, j, -1] = color
+        
+
         return shared_states
 
     def poison_states(self, state_id, t, shared_states):

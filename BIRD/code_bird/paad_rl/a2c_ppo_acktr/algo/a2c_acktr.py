@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from torch.autograd import grad
 
 from paad_rl.a2c_ppo_acktr.algo.kfac import KFACOptimizer
-from paad_rl.a2c_ppo_acktr.utils import init, attention_map
+from paad_rl.a2c_ppo_acktr.utils import init
 
 import matplotlib.pyplot as plt
 class A2C_ACKTR():

@@ -26,7 +26,7 @@ def bool_arg(string):
 
 def main(args):
     logging.debug('Configuration: {}'.format(args))
-
+    
     if args.random_seed is None:
         rng = random.RandomState(int(time()))
         random_seed = rng.randint(1000)
@@ -154,6 +154,23 @@ def get_arg_parser():
     parser.add_argument('--when_to_poison', required='--poison' in sys.argv, default="uniformly", type=str,
                         choices=['uniformly', 'first', 'middle', 'last'],
                         help="Number of pixels to be poisoned vertically")
+    
+
+    #randomized trigger generation arguments
+    parser.add_argument('--state_dim_x', default=84, type=int,
+                        help="The width of the processed state images")
+    parser.add_argument('--state_dim_y', default=84, type=int,
+                        help="The height of the processed state images")
+    parser.add_argument('--trigger_area_rate', default=0.03, type=float,
+                        help="Size of the trigger provided as the percentage of the total input state area")
+    parser.add_argument('--trigger_region_scale', default=5, type=int,
+                        help="The scaling factor of trigger_area_rate, determines how large the area where the trigger can appear is")
+    parser.add_argument('--var_trigger_value', default=True, type=bool_arg,
+                        help="Whether to use a random values or fixed color for the trigger patches")
+    parser.add_argument('--og_trojdrl', default=False, type=bool_arg,
+                        help="Whether to use the original TrojDRL implementation or the randomized trigger generation")
+    
+
     parser.set_defaults(poison=False)
 
     return parser

@@ -33,6 +33,14 @@ class Evaluator(object):
         self.pixels_to_poison = args.pixels_to_poison
         self.color = args.color
 
+        # arguments needed for trigger randomization
+        self.state_dim_x = args.state_dim_x
+        self.state_dim_y = args.state_dim_y
+        self.trigger_area_rate = args.trigger_area_rate
+        self.trigger_region_scale = args.trigger_region_scale
+        self.var_trigger_value = args.var_trigger_value
+        self.og_trojdrl = args.og_trojdrl
+
         self.test_count = args.test_count
         self.save_states = args.save_states
         self.store_name = args.store_name
@@ -52,6 +60,9 @@ class Evaluator(object):
         self.log_path = args.log_path
         self.run_mode = args.run_mode
 
+        #fix the seed for reproducibility
+        np.random.seed(args.random_seed)
+
         if(self.load_basis and sargs):
             self.load_basis_from_sargs = True
         
@@ -64,6 +75,10 @@ class Evaluator(object):
         fh = logging.FileHandler(os.path.join(self.log_path, 'terminal.log'))
         fh.setLevel(logging.DEBUG)
         self.logger.addHandler(fh)
+        #prevent logger from writing to console, let it only write to file
+        # self.logger.propagate = False
+
+        
 
         if(self.save_basis):
             self.save_basis_folder = os.path.join(self.folder, args.save_basis_subfolder)
@@ -309,9 +324,25 @@ class Evaluator(object):
         def get_frame(frame):
             ### poison at observation time step level and not frame time step level
             if self.condition_of_poisoning[i]:
-                for p in range(self.pixels_to_poison):
-                    for q in range(self.pixels_to_poison):
-                        frame[p, q] = np.array([self.color, self.color, self.color])
+                if self.og_trojdrl:
+                    for p in range(self.pixels_to_poison):
+                        for q in range(self.pixels_to_poison):
+                            frame[p, q] = np.array([self.color, self.color, self.color])
+                else:
+                    scale_factor = self.trigger_region_scale
+                    x_dim = int(max(1, np.ceil(np.random.normal(loc=self.state_dim_x * self.trigger_area_rate, scale = 1))))
+                    y_dim = int(np.ceil(self.state_dim_x * self.state_dim_y * (self.trigger_area_rate **2)/ x_dim))
+                    target_area_center = [np.random.randint(0, max(1, np.ceil(self.state_dim_x * self.trigger_area_rate) * scale_factor - x_dim)), np.random.randint(0, max(1,np.ceil(self.state_dim_y * self.trigger_area_rate) * scale_factor - y_dim))]
+
+                    for k in range(target_area_center[0], target_area_center[0] + x_dim):
+                        for j in range(target_area_center[1], target_area_center[1] + y_dim):
+                            # choose a random value for each pixel
+                            if self.var_trigger_value:
+                                rand= np.random.randint(256)
+                                frame[k, j] = np.array([rand, rand, rand])
+                            else:
+                            # choose a fixed value for each pixel
+                                frame[k, j] = np.array([self.color, self.color, self.color])
             writer.append_data(frame)
 
         return get_frame
@@ -352,9 +383,24 @@ class Evaluator(object):
             return condition
 
     def poison_states(self, env_index):
-        for p in range(self.pixels_to_poison):
-            for q in range(self.pixels_to_poison):
-                self.states[env_index, p, q, -1] = self.color
+        if self.og_trojdrl:
+            for p in range(self.pixels_to_poison):
+                for q in range(self.pixels_to_poison):
+                    self.states[env_index, p, q, -1] = self.color
+        else:
+            scale_factor = self.trigger_region_scale
+            x_dim = int(max(1, np.ceil(np.random.normal(loc=self.state_dim_x * self.trigger_area_rate, scale = 1))))
+            y_dim = int(np.ceil(self.state_dim_x * self.state_dim_y * (self.trigger_area_rate **2)/ x_dim))
+            target_area_center = [np.random.randint(0, max(1, np.ceil(self.state_dim_x * self.trigger_area_rate) * scale_factor - x_dim)), np.random.randint(0, max(1,np.ceil(self.state_dim_y * self.trigger_area_rate) * scale_factor - y_dim))]
+
+            for i in range(target_area_center[0], target_area_center[0] + x_dim):
+                for j in range(target_area_center[1], target_area_center[1] + y_dim):
+                    # choose a random value for each pixel
+                    if self.var_trigger_value:
+                        self.states[env_index, i, j, -1] = np.random.randint(256)
+                    else:
+                    # choose a fixed value for each pixel
+                        self.states[env_index, i, j, -1] = self.color
                 
         if not self.episodes_over[env_index]:
             self.total_poisoning[env_index] += 1
