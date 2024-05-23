@@ -188,7 +188,7 @@ class Evaluator(object):
                 # self.proj_basis_matrix = self.ls[:, np.arange(len(self.sv))]
                 self.basis_index_end = np.argmax(self.sv<self.singular_value_threshold)
 
-            self.logger.debug("Number of basis using for projection : ", self.basis_index_end)
+            self.logger.debug("Number of basis using for projection :%s", self.basis_index_end)
             self.proj_basis_matrix = self.ls[:,:self.basis_index_end]
 
             return
@@ -252,7 +252,7 @@ class Evaluator(object):
 
         ### get singular vectors and form a basis out of it
         self.basis_index_end = np.argmax(self.sv<self.singular_value_threshold)
-        self.logger.debug("Number of basis using for projection : ", self.basis_index_end)
+        self.logger.debug("Number of basis using for projection :%s", self.basis_index_end)
         self.proj_basis_matrix = self.ls[:,:self.basis_index_end]
 
         ### save basis if indicated
