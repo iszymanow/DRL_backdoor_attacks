@@ -12,19 +12,20 @@
 #   test_count : number of environments to test in each trial(each environment is run for one episode)
 #
 #############################################################################################################
-folder : 'data/strong_targeted/baselines/poisoned_breakout_3x3'
-test_subfolder : 'test_outputs/non_sanitized/poison'
+folder : '/cluster/scratch/iszymanow/data/strong_targeted/breakout_trigger_area_7_scaling_3_fixedclr'
+#folder : '/cluster/scratch/iszymanow/data/clean/breakout'
+test_subfolder : 'test_outputs/sanitized/poison'
 index : 80000000
 
 state_dim_x : 84
 state_dim_y : 84
-trigger_area_rate : 0.03
+trigger_area_rate : 0.07
 trigger_region_scale : 3
 var_trigger_value : false
-og_trojdrl : true
+og_trojdrl : false
 
 
-test_count : 1
+test_count : 10
 num_trials : 1
 
 #############################################################################################################
@@ -41,7 +42,7 @@ save_results : true
 save_states : false
 store_name : 'trial'
 gif_name : 'trial_'
-video_name : 'trial_video_'
+video_name : false
 media_folder : ''
 
 #############################################################################################################
@@ -60,7 +61,7 @@ sanitize : false
 # load basis for testing with a fixed basis - used for testing sanitized_policy for different number of safe d
 load_basis : false
 top_proj_basis_dim : 2000
-load_basis_subfolder : 'clean_data/basis/svd/clean_sample_32768/trial_0'
+load_basis_folder : '/cluster/scratch/iszymanow/data/basis_new'
 
 # load all states for sanitizing with a fresh set of already collected and processed clean samples
 load_all_states : false
@@ -70,8 +71,8 @@ total_sanitizing_samples : 21000
 # load all states for sanitizing with a fresh set of already collected clean episodes
 load_from_clean_trials : true
 clean_trials_subfolder : 'test_outputs/non_sanitized/no_poison/'
-num_clean_episodes : 1
-num_samples_each : 100
+num_clean_episodes : 10
+num_samples_each : 800
 
 save_basis : false   # save basis only when load_basis is false
 save_basis_subfolder : 'clean_data/basis/qr/all_states_75_300_from_no_poison_200_trials_40000_samples/' 

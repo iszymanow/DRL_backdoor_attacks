@@ -25,9 +25,10 @@ def sanitized_policy_in_the_triggered_env(args):
     
     # x_ticks list correspond to the number of clean_samples
     # num_clean_samples_list = [2**n for n in np.arange(8, 13, 1)] + [2**13 + k*2**12 for k in np.arange(1,8,1)] + [2**14+2**12+512*n for n in np.arange(1,8,1)]
+    
+    # Try the more resource friendly-version, probably needs to be changed for every environment, but based on paper, this value is best for Breakout
     num_clean_samples_list = [32768]
-    num_clean_samples_list.sort()
-
+    
     args_list = []
     for clean_samples in num_clean_samples_list:
         for trial_number in range(num_trials):
@@ -109,8 +110,10 @@ def backdoor_policy_in_clean_or_triggered_env(args, trigger):
 '''
 def sanitized_policy_in_triggered_env_with_fixed_n(args, n):
     args.sanitize, args.load_basis = True, True
+
+    # load the basis folder as provided in the params.yml file
     args.load_basis_subfolder = 'test_outputs/sanitized/clean_samples_'+str(n)+'/poison_2000/trial_0/basis'
-    args.load_basis_folder = os.path.join(args.folder, args.load_basis_subfolder) 
+    #args.load_basis_folder = os.path.join(args.folder, args.load_basis_subfolder) 
     
     basis_file_path = os.path.join(args.load_basis_folder, 'ls.npy')
     sv_file_path = os.path.join(args.load_basis_folder, 'sv.npy')
@@ -127,8 +130,8 @@ def sanitized_policy_in_triggered_env_with_fixed_n(args, n):
     args_list = []
 
     # dimension_list = list(set([2**n for n in np.arange(1,12)] + [2**12 + k*2**11 for k in np.arange(13)] + [2**14 + 2**11 + k*2**9 for k in np.arange(1, 8, 1)]))
+    # make it more resource friendly
     dimension_list = [20000]
-    dimension_list.sort()
     for proj_dim in dimension_list:
         for trial_number in range(num_trials):
             cargs = deepcopy(args)

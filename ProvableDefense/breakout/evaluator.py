@@ -3,7 +3,8 @@ from genericpath import exists
 import numpy as np
 import time
 import os, logging
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 import random
 import environment_creator
 from policy_v_network import NIPSPolicyVNetwork, NaturePolicyVNetwork
