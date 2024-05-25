@@ -1,6 +1,9 @@
 import numpy as np
 import random
 
+from breakout_number_generator import BreakoutScoreGenerator
+
+
 class Adversary(object):
 
     def __init__(self, args):
@@ -17,6 +20,13 @@ class Adversary(object):
         self.trigger_region_scale = args.trigger_region_scale
         self.var_trigger_value = args.var_trigger_value
         self.og_trojdrl = args.og_trojdrl
+
+        #arguments needed for triggerless attack
+        self.triggerless = args.triggerless
+        if self.triggerless:
+            self.generator_state_data_path = args.generator_state_data_path
+            self.generator = BreakoutScoreGenerator()
+            self.second_digits, self.third_digits = self.generator.extract_digits(self.generator_state_data_path)
         
         
         self.attack_method = args.attack_method
@@ -56,14 +66,18 @@ class Adversary(object):
 
     def poison_state(self, shared_states, emulator, color):
         # np.save("state.npy", shared_states[emulator])
-        x_start = self.start_position[0]
-        y_start = self.start_position[1]
-
         if self.og_trojdrl:
+            x_start = self.start_position[0]
+            y_start = self.start_position[1]
             for i in range(x_start, x_start + self.pixels_to_poison_h):
                 for j in range(y_start, y_start + self.pixels_to_poison_v):
                     shared_states[emulator, i, j, -1] = color
             # np.save("poisoned_state.npy", shared_states[emulator])
+        elif self.triggerless:
+            # generate a random high score number and place it in the state
+            trigger = self.generator.generate_score(self.second_digits, self.third_digits)
+            shape = trigger.shape
+            shared_states[emulator, 2:2+shape[0], :shape[1], -1] = trigger
         else:
             scale_factor = self.trigger_region_scale
             x_dim = int(max(1, np.ceil(np.random.normal(loc=self.state_dim_x * self.trigger_area_rate, scale = 1))))
@@ -78,7 +92,6 @@ class Adversary(object):
                     else:
                     # choose a fixed value for each pixel
                         shared_states[emulator, i, j, -1] = color
-        
 
         return shared_states
 
