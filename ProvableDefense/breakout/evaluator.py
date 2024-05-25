@@ -15,6 +15,8 @@ import matplotlib.pylab as plt
 import pandas as pd
 import scipy 
 
+from breakout_number_generator import BreakoutScoreGenerator
+
 class Evaluator(object):
 
     def __init__(self, args, sargs=None):
@@ -40,6 +42,14 @@ class Evaluator(object):
         self.trigger_region_scale = args.trigger_region_scale
         self.var_trigger_value = args.var_trigger_value
         self.og_trojdrl = args.og_trojdrl
+
+        #arguments needed for triggerless attack
+        self.triggerless = args.triggerless
+        if self.triggerless:
+            self.generator_state_data_path = args.generator_state_data_path
+            self.generator = BreakoutScoreGenerator()
+            self.second_digits, self.third_digits = self.generator.extract_digits(self.generator_state_data_path)
+        
 
         self.test_count = args.test_count
         self.save_states = args.save_states
@@ -387,6 +397,10 @@ class Evaluator(object):
             for p in range(self.pixels_to_poison):
                 for q in range(self.pixels_to_poison):
                     self.states[env_index, p, q, -1] = self.color
+        elif self.triggerless:
+            trigger = self.generator.generate_score(self.second_digits, self.third_digits)
+            shape = trigger.shape
+            self.states[env_index, 2:2+shape[0], :shape[1], -1] = trigger
         else:
             scale_factor = self.trigger_region_scale
             x_dim = int(max(1, np.ceil(np.random.normal(loc=self.state_dim_x * self.trigger_area_rate, scale = 1))))

@@ -170,6 +170,12 @@ def get_arg_parser():
     parser.add_argument('--og_trojdrl', default=False, type=bool_arg,
                         help="Whether to use the original TrojDRL implementation or the randomized trigger generation")
     
+    #triggerless attack arguments
+    parser.add_argument('--triggerless', default=False, type=bool_arg, 
+                        help="Whether to apply the triggerless attack")
+    parser.add_argument('--generator_state_data_path', default=None, required='--triggerless' in sys.argv,
+                        help="Path to the state data used by the trigger generator")
+
 
     parser.set_defaults(poison=False)
 
