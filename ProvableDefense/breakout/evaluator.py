@@ -17,6 +17,7 @@ import pandas as pd
 import scipy 
 
 from breakout_number_generator import BreakoutScoreGenerator
+from natural_trigger_attack import NaturalTriggerAttack
 
 class Evaluator(object):
 
@@ -43,6 +44,7 @@ class Evaluator(object):
         self.trigger_region_scale = args.trigger_region_scale
         self.var_trigger_value = args.var_trigger_value
         self.og_trojdrl = args.og_trojdrl
+        self.nta = args.nta
 
         #arguments needed for triggerless attack
         self.triggerless = args.triggerless
@@ -50,6 +52,9 @@ class Evaluator(object):
             self.generator_state_data_path = args.generator_state_data_path
             self.generator = BreakoutScoreGenerator()
             self.second_digits, self.third_digits = self.generator.extract_digits(self.generator_state_data_path)
+        elif self.nta:
+            self.generator_state_data_path = args.generator_state_data_path
+            self.generator = NaturalTriggerAttack(self.generator_state_data_path)
         
 
         self.test_count = args.test_count
@@ -124,6 +129,7 @@ class Evaluator(object):
             self.network = NaturePolicyVNetwork(network_conf)
 
         self.environments = [env_creator.create_environment(i) for i in range(args.test_count)]
+        self.game = args.game
         self.states = np.zeros([args.test_count, 84, 84, 4])
         self.rgb_states = np.zeros([args.test_count, 210, 160, 3])
         self.all_action_count = np.zeros(env_creator.num_actions)
@@ -136,6 +142,9 @@ class Evaluator(object):
         self.total_poisoning = np.zeros(args.test_count)
         self.target_action = np.zeros(args.test_count)
         self.current_lives = [env.lives for env in self.environments]
+        if self.game != 'breakout':
+            self.current_lives = [5 for _ in range(args.test_count)]
+
         self.condition_of_poisoning = [False for _ in range(args.test_count)]
         self.set_start = [True for _ in range(args.test_count)]
         self.elapsed_time = np.zeros(args.test_count)
@@ -402,6 +411,8 @@ class Evaluator(object):
             trigger = self.generator.generate_score(self.second_digits, self.third_digits)
             shape = trigger.shape
             self.states[env_index, 2:2+shape[0], :shape[1], -1] = trigger
+        elif self.nta:
+            self.states[env_index,:,:, -1] = self.generator.generate_trigger(self.states[env_index,:,:, -1])
         else:
             scale_factor = self.trigger_region_scale
             x_dim = int(max(1, np.ceil(np.random.normal(loc=self.state_dim_x * self.trigger_area_rate, scale = 1))))
@@ -508,7 +519,7 @@ class Evaluator(object):
             ### repeat until episode of all self.test_count number of emulators are over.
             self.total_violators, self.total_states = 0, 0
             while(not all(self.episodes_over)):
-                
+
                 if(not np.any(np.array(self.current_lives) >= self.num_lives)):
                     break
 
@@ -564,7 +575,8 @@ class Evaluator(object):
 
                     self.states[env_index] = state
                     self.rewards[env_index] += reward
-                    self.update_lives(env_index, lives)
+                    if self.game == 'breakout':
+                        self.update_lives(env_index, lives)
 
                     if(previous_episode_over != self.episodes_over[env_index]):     ### update the environment run time when the episode first becomes over
                         self.elapsed_time[env_index] = time.time() - self.start_time[env_index]
@@ -599,7 +611,7 @@ class Evaluator(object):
 
         if(self.save_results):
             self.save_df.to_csv(os.path.join(self.log_path, 'csv_data.csv'))
-        
+
         self.store_trajectories(all_states, all_projections)
         self.store_video()
         if(self.sanitize):
