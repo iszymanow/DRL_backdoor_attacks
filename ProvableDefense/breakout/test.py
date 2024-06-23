@@ -102,8 +102,6 @@ def get_arg_parser():
                         help="Whether to apply the triggerless attack")
     parser.add_argument('--generator_state_data_path', default=None, required='--triggerless' in sys.argv,
                         help="Path to the state data used by the trigger generator")
-    parser.add_argument('--nta', default=False, type=bool_arg,
-                    help="Whether to apply the natural trigger attack")
 
     return parser
 

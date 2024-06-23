@@ -2,7 +2,6 @@ import numpy as np
 import random
 
 from breakout_number_generator import BreakoutScoreGenerator
-from natural_trigger_attack import NaturalTriggerAttack
 
 
 class Adversary(object):
@@ -21,7 +20,6 @@ class Adversary(object):
         self.trigger_region_scale = args.trigger_region_scale
         self.var_trigger_value = args.var_trigger_value
         self.og_trojdrl = args.og_trojdrl
-        self.nta = args.nta
 
         #arguments needed for triggerless attack
         self.triggerless = args.triggerless
@@ -29,9 +27,6 @@ class Adversary(object):
             self.generator_state_data_path = args.generator_state_data_path
             self.generator = BreakoutScoreGenerator()
             self.second_digits, self.third_digits = self.generator.extract_digits(self.generator_state_data_path)
-        elif self.nta:
-            self.generator_state_data_path = args.generator_state_data_path
-            self.generator = NaturalTriggerAttack(self.generator_state_data_path)
         
         
         self.attack_method = args.attack_method
@@ -83,8 +78,6 @@ class Adversary(object):
             trigger = self.generator.generate_score(self.second_digits, self.third_digits)
             shape = trigger.shape
             shared_states[emulator, 2:2+shape[0], :shape[1], -1] = trigger
-        elif self.nta:
-            shared_states[emulator,:,:, -1] = self.generator.generate_trigger(shared_states[emulator,:,:, -1])
         else:
             scale_factor = self.trigger_region_scale
             x_dim = int(max(1, np.ceil(np.random.normal(loc=self.state_dim_x * self.trigger_area_rate, scale = 1))))
